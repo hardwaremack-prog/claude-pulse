@@ -1,0 +1,31 @@
+{
+  "port": 8787,
+  "bind": "0.0.0.0",
+  "ticker": "ANT",
+  "ipo_price": 83.0,
+  "ipo_date": "2026-11-19",
+  "shares_outstanding": 13370000000,
+  "peers": [
+    "^IXIC",
+    "NVDA",
+    "GOOGL",
+    "AMZN",
+    "MSFT"
+  ],
+  "openrouter_api_key": "",
+  "openrouter_models": [],
+  "anthropic_api_key": "",
+  "probe_models": [
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5",
+    "claude-opus-5-5",
+    "claude-fable-5-2"
+  ],
+  "probe_interval_min": 15,
+  "news_queries": [
+    "Anthropic Claude",
+    "Anthropic stock ANT",
+    "Claude new model"
+  ],
+  "history_keep_days": 45
+}

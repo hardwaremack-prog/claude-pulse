@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Pulse</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#141210; --panel:#1d1a17; --panel2:#24201c; --line:#332d27; --text:#ede6df; --muted:#a39689;
+  --dim:#7a6e63; --accent:#e07a52; --accent2:#f2b38f; --up:#4fbf86; --down:#e0605a; --warn:#e6b84f;
+  --blue:#6aa7e8; --violet:#b48ef0; --teal:#4cc3bd;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+a{color:var(--accent2);text-decoration:none} a:hover{text-decoration:underline}
+header{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(20,18,16,.94);backdrop-filter:blur(6px);z-index:5;flex-wrap:wrap}
+header img{width:34px;height:34px}
+header h1{font-size:19px;margin:0;font-weight:650;letter-spacing:.2px}
+header .sub{color:var(--muted);font-size:12px}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;flex:none}
+.dot.l0{background:var(--up)} .dot.l1{background:var(--warn)} .dot.l2{background:#ef8a4a} .dot.l3{background:var(--down)}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.avail{background:var(--accent);border-color:var(--accent);color:#1a0f0a;font-weight:600}
+button:disabled{opacity:.7;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a0f0a;font-weight:600}
+main{padding:18px 20px 40px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px;max-width:1600px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .right{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+.span12{grid-column:span 12}.span8{grid-column:span 8}.span7{grid-column:span 7}.span6{grid-column:span 6}.span5{grid-column:span 5}.span4{grid-column:span 4}
+@media(max-width:1100px){.span8,.span7,.span6,.span5,.span4{grid-column:span 12}}
+.big{font-size:42px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
+.chg{font-size:17px;font-weight:600}
+.up{color:var(--up)} .down{color:var(--down)} .muted{color:var(--muted)} .dim{color:var(--dim)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin:14px 0 4px}
+.stat{background:var(--panel2);border-radius:10px;padding:8px 10px}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:15px;font-weight:600;margin-top:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:4px 10px;background:transparent;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#1a0f0a;font-weight:600}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%}
+.tip{position:absolute;pointer-events:none;background:#0d0b0a;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;white-space:nowrap;z-index:3;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.peers{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.peer{background:var(--panel2);border-radius:8px;padding:5px 10px;font-size:12px}
+.peer b{margin-right:6px}
+.bar{height:10px;border-radius:6px;background:var(--panel2);overflow:hidden;margin:6px 0 4px}
+.bar>div{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.bar>div.hot{background:linear-gradient(90deg,#f0a14a,var(--down))}
+.usage-row{margin-bottom:14px}
+.usage-row .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.cd{font-variant-numeric:tabular-nums;font-weight:600}
+form.usage{display:none;margin-top:10px;background:var(--panel2);border-radius:10px;padding:12px;gap:10px;grid-template-columns:1fr 1fr}
+form.usage.open{display:grid}
+form.usage label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+form.usage input,form.usage select{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px;font:inherit}
+form.usage .full{grid-column:span 2;display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--panel2);border-radius:10px;padding:9px 12px}
+.item .meta{font-size:11px;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:1px 6px;border-radius:4px;margin-right:6px;font-weight:700;vertical-align:1px}
+.tag.release{background:#3a2a4d;color:#d4b8ff}.tag.stock{background:#1f3a2e;color:#8fe0b5}.tag.outage{background:#4a2321;color:#ffaaa4}.tag.new{background:var(--accent);color:#1a0f0a}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.warnbox{background:#3a2e17;border:1px solid #6b5426;color:#f3d79b;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:10px}
+.errbox{background:#3a1d1b;border:1px solid #6b2e2a;color:#ffc2bd;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:10px}
+.comp{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px}
+.comp .st{margin-left:auto;font-size:12px;color:var(--muted)}
+.tl-row{display:grid;grid-template-columns:170px 1fr 64px;gap:10px;align-items:center;margin:4px 0;font-size:12px}
+@media(max-width:600px){.tl-row{grid-template-columns:100px 1fr 56px}}
+.tl-row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-track{position:relative;height:16px;background:#1f3328;border-radius:4px;overflow:hidden}
+.tl-track.nodata{background:var(--panel2)}
+.tl-track span{position:absolute;top:0;bottom:0;min-width:2px}
+.tl-axis{display:grid;grid-template-columns:170px 1fr 64px;gap:10px;font-size:11px;color:var(--dim)}
+@media(max-width:600px){.tl-axis{grid-template-columns:100px 1fr 56px}}
+.tl-axis .ticks{position:relative;height:16px}
+.tl-axis .ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.bt-now{display:flex;align-items:center;gap:12px;background:var(--panel2);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.bt-now .big2{font-size:16px;font-weight:650}
+.bt-grid{display:grid;grid-template-columns:34px repeat(24,1fr);gap:2px;font-size:10px;color:var(--dim);align-items:center}
+.bt-grid .c{height:18px;border-radius:3px;position:relative}
+.bt-grid .c.peak{box-shadow:inset 0 0 0 1.5px #e07a52}
+.bt-grid .c.now{outline:2px solid #fff;outline-offset:1px;z-index:1}
+.bt-grid .lbl{text-align:center}
+.bt-best{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.bt-best .item{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.hours{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;margin-top:6px}
+.hours div{height:26px;border-radius:3px;background:var(--panel2);position:relative}
+.hours-lbl{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;font-size:10px;color:var(--dim);text-align:center}
+.speedbar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;width:90px;display:inline-block;vertical-align:middle;margin-left:6px}
+.speedbar>div{height:100%;background:var(--teal)}
+@media(max-width:640px){#modelTable .hide-sm{display:none}.speedbar{display:none}main{padding:12px 10px 30px}.card{padding:14px}.big{font-size:34px}}
+footer{grid-column:span 12;color:var(--dim);font-size:12px;text-align:center;padding-top:6px}
+.empty{color:var(--dim);font-size:13px;padding:20px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <img src="/icon.svg" alt="">
+  <div>
+    <h1>Claude Pulse <span id="ver" class="pill" style="font-size:11px;padding:1px 8px;vertical-align:3px;font-weight:500"></span></h1>
+    <div class="sub" id="updated">Loading…</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill" id="pillStatus"><span class="dot"></span><span>Status…</span></span>
+  <span class="pill" id="pillMarket"><span class="dot"></span><span>Market…</span></span>
+  <button id="btnUpdate" title="Check GitHub for a newer version of Claude Pulse">⬆ Update</button>
+  <button id="btnRefresh" title="Fetch everything now">↻ Refresh</button>
+</header>
+
+<main>
+  <!-- STOCK -->
+  <section class="card span8" id="stockCard">
+    <h2><span id="stockTitle">ANT · Anthropic, PBC</span>
+      <span class="right"><span class="seg" id="rangeSeg">
+        <button data-r="1d">1D</button><button data-r="4d" class="on">4D</button><button data-r="all">Since IPO</button>
+      </span></span></h2>
+    <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+      <div class="big" id="price">—</div>
+      <div class="chg" id="change"></div>
+      <div class="muted" id="extQuote"></div>
+    </div>
+    <div class="stats" id="stockStats"></div>
+    <div class="chart" id="stockChart"></div>
+    <div class="legend" id="stockLegend"></div>
+    <div class="peers" id="peers"></div>
+  </section>
+
+  <!-- STATUS -->
+  <section class="card span4" id="statusCard">
+    <h2>Service status <span class="right"><a id="statusLink" href="https://status.claude.com" target="_blank" rel="noopener">status page ↗</a></span></h2>
+    <div id="statusAlerts"></div>
+    <div id="components"></div>
+    <h2 style="margin-top:14px">Maintenance</h2>
+    <div id="maint" class="list"></div>
+  </section>
+
+  <!-- MODELS -->
+  <section class="card span7" id="modelsCard">
+    <h2>Models · speed &amp; load <span class="right muted" id="probeInfo"></span></h2>
+    <div id="modelsNote"></div>
+    <table id="modelTable"></table>
+    <h2 style="margin-top:16px"><span id="ttftTitle">Time to first token · last 4 days</span> <span class="right muted" id="ttftHint">lower is faster</span></h2>
+    <div class="chart" id="ttftChart"></div>
+    <div class="legend" id="ttftLegend"></div>
+    <h2 style="margin-top:16px"><span id="tpsTitle">Output speed · tokens/second</span> <span class="right muted">higher is faster</span></h2>
+    <div class="chart" id="tpsChart"></div>
+    <h2 style="margin-top:16px">Busiest hours (ET) <span class="right muted">avg wait for first token, all models</span></h2>
+    <div id="hours"></div>
+  </section>
+
+  <!-- USAGE -->
+  <section class="card span5" id="usageCard">
+    <h2>Your Claude usage &amp; resets <span class="right"><button id="btnUsage">Update</button></span></h2>
+    <div id="usageView"></div>
+    <form class="usage" id="usageForm">
+      <label>Plan
+        <select name="plan"><option>Free</option><option>Pro</option><option>Max 5x</option><option>Max 20x</option><option>Team</option><option>Enterprise</option></select></label>
+      <label>Current session used (%)<input name="session_pct" type="number" min="0" max="100" step="1"></label>
+      <label>Session resets in (h:mm)<input name="session_in" placeholder="e.g. 3:20"></label>
+      <label>Weekly used (%)<input name="weekly_pct" type="number" min="0" max="100" step="1"></label>
+      <label>Weekly resets at<input name="weekly_reset" type="datetime-local"></label>
+      <label>Model weekly limit used (%)<input name="weekly_model_pct" type="number" min="0" max="100" step="1"></label>
+      <div class="full"><span class="muted" style="margin-right:auto;font-size:12px">Copy these from Claude → Settings → Usage.</span>
+        <button type="button" id="usageCancel">Cancel</button><button class="primary" type="submit">Save</button></div>
+    </form>
+    <div id="usageChartWrap" style="display:none">
+      <h2 style="margin-top:16px">Usage · last 4 days <span class="right muted">% used</span></h2>
+      <div class="chart" id="usageChart"></div>
+      <div class="legend" id="usageLegend"></div>
+    </div>
+    <div id="bestTime">
+      <h2 style="margin-top:16px">Best time to use Claude <span class="right muted" id="btNote"></span></h2>
+      <div id="btNow"></div>
+      <div id="btGrid"></div>
+      <div id="btBest"></div>
+    </div>
+    <div id="rlWrap">
+      <h2 style="margin-top:16px">API rate limits <span class="right muted" id="rlAt"></span></h2>
+      <div id="rateLimits"></div>
+    </div>
+  </section>
+
+  <!-- INCIDENT TIMELINE -->
+  <section class="card span12" id="timelineCard">
+    <h2>Incidents &amp; outages · last 4 days <span class="right muted" id="tlNote"></span></h2>
+    <div id="timeline"></div>
+    <div class="legend"><span><i style="background:#1f3328;height:8px"></i>Operational</span><span><i style="background:var(--warn);height:8px"></i>Minor / degraded</span><span><i style="background:#ef8a4a;height:8px"></i>Partial outage</span><span><i style="background:var(--down);height:8px"></i>Major outage</span></div>
+    <h2 style="margin-top:16px">Recent incidents</h2>
+    <div id="incidents" class="list"></div>
+  </section>
+
+  <!-- RELEASE RADAR + NEWS -->
+  <section class="card span5" id="radarCard">
+    <h2>Release radar</h2>
+    <div id="newModels"></div>
+    <h2 style="margin-top:14px">Release headlines</h2>
+    <div id="releaseNews" class="list"></div>
+  </section>
+  <section class="card span7" id="newsCard">
+    <h2>News <span class="right"><span class="filters" id="newsFilters">
+      <button data-f="all" class="on">All</button><button data-f="release">Releases</button><button data-f="stock">Stock</button><button data-f="outage">Outages</button></span></span></h2>
+    <div id="news" class="list"></div>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => (typeof u === "string" && /^https?:\/\//i.test(u)) ? u : null;
+const COLORS = ["#6aa7e8", "#4cc3bd", "#e07a52", "#b48ef0", "#e6b84f", "#4fbf86"];
+let S = null, H = null, stockRange = "4d", newsFilter = "all";
+
+// ---------- platform wording (Pi / Linux vs Windows PC)
+const onWin = () => S?.config?.platform === "windows";
+const HOST = () => onWin() ? "this PC" : "this Pi";
+const CONF_PATH = () => onWin() ? "%APPDATA%\\ClaudePulse\\config.json" : "~/.config/claude-pulse/config.json";
+const TERMINAL = () => onWin() ? "PowerShell" : "a terminal";
+const CC_INSTALL = () => onWin() ? "irm https://claude.ai/install.ps1 | iex" : "curl -fsSL https://claude.ai/install.sh | bash";
+
+// ---------- formatting
+const fmtUSD = (v, d = 2) => v == null ? "—" : "$" + Number(v).toLocaleString(undefined, {minimumFractionDigits: d, maximumFractionDigits: d});
+const fmtPct = v => v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
+const fmtBig = v => { if (v == null) return "—"; const a = Math.abs(v);
+  if (a >= 1e12) return "$" + (v / 1e12).toFixed(2) + "T"; if (a >= 1e9) return "$" + (v / 1e9).toFixed(1) + "B";
+  if (a >= 1e6) return (v / 1e6).toFixed(1) + "M"; return v.toLocaleString(); };
+const fmtVol = v => v == null ? "—" : v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? (v / 1e3).toFixed(0) + "K" : String(v);
+const fmtSec = v => v == null ? "—" : v < 1 ? Math.round(v * 1000) + " ms" : v.toFixed(2) + " s";
+const ET = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", weekday: "short", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit"});
+const ETday = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", weekday: "short", month: "numeric", day: "numeric"});
+const ETparts = ts => { const p = {}; new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"}).formatToParts(new Date(ts * 1000)).forEach(x => p[x.type] = x.value); return {day: `${p.year}-${p.month}-${p.day}`, min: (+p.hour % 24) * 60 + (+p.minute)}; };
+const fmtTime = ts => ts ? ET.format(new Date(ts * 1000)) : "—";
+function ago(ts) { if (!ts) return "never"; const s = Math.max(0, Date.now() / 1000 - ts);
+  if (s < 60) return Math.round(s) + "s ago"; if (s < 3600) return Math.round(s / 60) + "m ago";
+  if (s < 86400) return Math.round(s / 3600) + "h ago"; return Math.round(s / 86400) + "d ago"; }
+function countdown(ts) { if (!ts) return "—"; let s = Math.max(0, Math.round(ts - Date.now() / 1000));
+  const d = Math.floor(s / 86400); s -= d * 86400; const h = Math.floor(s / 3600); s -= h * 3600; const m = Math.floor(s / 60); s -= m * 60;
+  return (d ? d + "d " : "") + (d || h ? h + "h " : "") + m + "m " + String(s).padStart(2, "0") + "s"; }
+const cls = v => v == null ? "" : v >= 0 ? "up" : "down";
+
+// ---------- generic SVG line chart with tooltip
+// series: [{name,color,points:[[x,y],...]}]; opts: {height, yFmt, xMode:"time"|"index", xLabels, refs:[{y,label,color}], bands:[[x0,x1]], xTicks:[[x,label]], tipX}
+function lineChart(el, series, opts = {}) {
+  el.innerHTML = "";
+  const W = Math.max(280, el.clientWidth), Hh = opts.height || 220, L = 52, R = 12, T = 10, B = 26;
+  const all = series.flatMap(s => s.points).filter(p => p[1] != null);
+  if (!all.length) { el.innerHTML = `<div class="empty">${esc(opts.empty || "No data yet — it builds up as the app runs.")}</div>`; return; }
+  let x0 = opts.xMin ?? Math.min(...all.map(p => p[0])), x1 = opts.xMax ?? Math.max(...all.map(p => p[0]));
+  if (x1 === x0) x1 = x0 + 1;
+  let ys = all.map(p => p[1]).concat((opts.refs || []).map(r => r.y));
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (opts.yZero) y0 = Math.min(0, y0);
+  const pad = (y1 - y0) * 0.08 || Math.abs(y1) * 0.05 || 1; y0 -= opts.yZero ? 0 : pad; y1 += pad;
+  const sx = x => L + (x - x0) / (x1 - x0) * (W - L - R), sy = y => T + (1 - (y - y0) / (y1 - y0)) * (Hh - T - B);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${Hh}`); svg.setAttribute("height", Hh);
+  let h = "";
+  (opts.bands || []).forEach(([a, b]) => { h += `<rect x="${sx(a)}" y="${T}" width="${Math.max(1, sx(b) - sx(a))}" height="${Hh - T - B}" fill="#ffffff" opacity="0.035"/>`; });
+  for (let i = 0; i <= 4; i++) { const y = y0 + (y1 - y0) * i / 4, py = sy(y);
+    h += `<line x1="${L}" x2="${W - R}" y1="${py}" y2="${py}" stroke="#332d27" stroke-width="1"/>`;
+    h += `<text x="${L - 6}" y="${py + 4}" fill="#7a6e63" font-size="11" text-anchor="end">${esc((opts.yFmt || (v => v.toFixed(2)))(y))}</text>`; }
+  (opts.xTicks || []).forEach(([x, lab]) => { const px = sx(x); if (px < L - 1 || px > W - R + 1) return;
+    h += `<line x1="${px}" x2="${px}" y1="${T}" y2="${Hh - B}" stroke="#3d3630" stroke-dasharray="2 3"/>`;
+    const end = px > W - R - 70;  // near the right edge: right-align so the label isn't cut off
+    h += `<text x="${end ? Math.min(px, W - R) : Math.max(L + 2, px + 4)}" y="${Hh - 8}" fill="#7a6e63" font-size="11" text-anchor="${end ? "end" : "start"}">${esc(lab)}</text>`; });
+  (opts.refs || []).forEach(r => { const py = sy(r.y);
+    h += `<line x1="${L}" x2="${W - R}" y1="${py}" y2="${py}" stroke="${r.color || "#a39689"}" stroke-dasharray="5 4" stroke-width="1.2"/>`;
+    h += `<text x="${W - R - 4}" y="${py - 5}" fill="${r.color || "#a39689"}" font-size="11" text-anchor="end">${esc(r.label)}</text>`; });
+  series.forEach(s => {
+    const pts = s.points.filter(p => p[1] != null); if (!pts.length) return;
+    let d = "", prev = null;
+    pts.forEach(p => { const gap = prev && opts.gap && p[0] - prev[0] > opts.gap; d += (d && !gap ? "L" : "M") + sx(p[0]).toFixed(1) + "," + sy(p[1]).toFixed(1); prev = p; });
+    if (s.fill && pts.length > 1) h += `<path d="${d}L${sx(pts[pts.length - 1][0])},${Hh - B}L${sx(pts[0][0])},${Hh - B}Z" fill="${s.color}" opacity="0.10"/>`;
+    h += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 1.8}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (pts.length < 40 && !s.noDots) pts.forEach(p => h += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="2.4" fill="${s.color}"/>`);
+  });
+  h += `<line class="cross" x1="0" x2="0" y1="${T}" y2="${Hh - B}" stroke="#a39689" stroke-width="1" style="display:none"/>`;
+  svg.innerHTML = h;
+  const dots = series.map(s => { const c = document.createElementNS(NS, "circle"); c.setAttribute("r", 4); c.setAttribute("fill", s.color); c.setAttribute("stroke", "#141210"); c.setAttribute("stroke-width", 2); c.style.display = "none"; svg.appendChild(c); return c; });
+  el.appendChild(svg);
+  const tip = document.createElement("div"); tip.className = "tip"; el.appendChild(tip);
+  const cross = svg.querySelector(".cross");
+  const move = ev => {
+    const r = svg.getBoundingClientRect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    const mx = cx * W / r.width; if (mx < L || mx > W - R) return leave();
+    const xv = x0 + (mx - L) / (W - L - R) * (x1 - x0);
+    let rows = [], anchor = null;
+    series.forEach((s, i) => {
+      const pts = s.points.filter(p => p[1] != null); if (!pts.length) { dots[i].style.display = "none"; return; }
+      let best = pts[0]; for (const p of pts) if (Math.abs(p[0] - xv) < Math.abs(best[0] - xv)) best = p;
+      if (opts.maxSnap && Math.abs(best[0] - xv) > opts.maxSnap) { dots[i].style.display = "none"; return; }
+      dots[i].setAttribute("cx", sx(best[0])); dots[i].setAttribute("cy", sy(best[1])); dots[i].style.display = "";
+      anchor = anchor ?? best;
+      rows.push(`<div><span style="color:${s.color}">●</span> ${esc(s.name)}: <b>${esc((opts.tipFmt || opts.yFmt || (v => v.toFixed(2)))(best[1]))}</b></div>`);
+    });
+    if (!anchor) return leave();
+    cross.setAttribute("x1", sx(anchor[0])); cross.setAttribute("x2", sx(anchor[0])); cross.style.display = "";
+    tip.innerHTML = `<div class="muted">${esc((opts.tipX || (x => fmtTime(x)))(anchor[0], anchor))}</div>` + rows.join("");
+    tip.style.display = "block";
+    const px = sx(anchor[0]) * r.width / W; const tw = tip.offsetWidth;
+    tip.style.left = Math.min(r.width - tw - 4, Math.max(4, px + 12)) + "px"; tip.style.top = "6px";
+  };
+  const leave = () => { tip.style.display = "none"; cross.style.display = "none"; dots.forEach(d => d.style.display = "none"); };
+  svg.addEventListener("mousemove", move); svg.addEventListener("touchmove", move, {passive: true});
+  svg.addEventListener("mouseleave", leave);
+}
+
+// ---------- data loading
+async function getJSON(url, opt) { const r = await fetch(url, opt); if (!r.ok) throw new Error(r.status); return r.json(); }
+async function loadState() { try { S = await getJSON("/api/state"); renderState(); } catch (e) { $("#updated").textContent = "Can't reach the Claude Pulse server (" + e.message + ")"; } }
+async function loadHistory() { try { H = await getJSON("/api/history?days=" + (stockRange === "all" ? 30 : 4)); renderHistory(); } catch (e) { console.warn(e); } }
+
+// ---------- header + stock
+function renderState() {
+  const q = S.quote || {};
+  $("#ver").textContent = "v" + S.version;
+  $("#updated").textContent = "Updated " + new Date(S.now * 1000).toLocaleTimeString() + (S.config.offline ? " · OFFLINE MODE" : "");
+  // status pill
+  const st = S.status; const lvl = {none: 0, minor: 1, major: 2, critical: 3}[st?.indicator] ?? null;
+  $("#pillStatus").innerHTML = `<span class="dot ${lvl == null ? "" : "l" + lvl}"></span><span>${esc(st ? st.description : "Status unknown")}</span>`;
+  const ms = S.market.state; const mlabel = {open: "Market open", pre: "Pre-market", post: "After hours", closed: "Market closed"}[ms];
+  $("#pillMarket").innerHTML = `<span class="dot ${ms === "open" ? "l0" : ms === "closed" ? "" : "l1"}"></span><span>${mlabel}${S.market.next_open && ms === "closed" ? " · opens " + esc(fmtTime(S.market.next_open)) : ""}</span>`;
+
+  $("#stockTitle").textContent = `${S.config.ticker} · ${q.name || "Anthropic, PBC"}`;
+  $("#price").textContent = fmtUSD(q.price);
+  $("#change").innerHTML = q.change != null ? `<span class="${cls(q.change)}">${q.change >= 0 ? "▲" : "▼"} ${fmtUSD(Math.abs(q.change))} (${fmtPct(q.change_pct)})</span> <span class="muted" style="font-size:13px;font-weight:400">today</span>` : "";
+  $("#extQuote").innerHTML = q.ext_price ? `${ms === "pre" ? "Pre-market" : "After hours"}: <b>${fmtUSD(q.ext_price)}</b> <span class="${cls(q.ext_change_pct)}">${fmtPct(q.ext_change_pct)}</span>` : "";
+  const stats = [
+    ["Vs IPO $" + (S.config.ipo_price || 83), q.vs_ipo_pct != null ? `<span class="${cls(q.vs_ipo_pct)}">${fmtPct(q.vs_ipo_pct)}</span>` : "—"],
+    ["Prev close", fmtUSD(q.prev_close)],
+    ["Day range", q.day_low != null ? `${fmtUSD(q.day_low)} – ${fmtUSD(q.day_high)}` : "—"],
+    ["Since-IPO range", q.low52 != null ? `${fmtUSD(q.low52)} – ${fmtUSD(q.high52)}` : "—"],
+    ["Volume", fmtVol(q.volume)],
+    ["Market cap (est.)", fmtBig(q.market_cap_est)],
+  ];
+  $("#stockStats").innerHTML = stats.map(([k, v]) => `<div class="stat"><div class="k">${esc(k)}</div><div class="v">${v}</div></div>`).join("");
+  $("#peers").innerHTML = (S.peers || []).map(p => `<span class="peer"><b>${esc(p.symbol === "^IXIC" ? "Nasdaq" : p.symbol)}</b>${p.price != null ? fmtUSD(p.price, p.price > 1000 ? 0 : 2) : "—"} <span class="${cls(p.change_pct)}">${fmtPct(p.change_pct)}</span></span>`).join("")
+    + `<span class="peer dim">Quote: ${esc(q.source || "—")} · ${esc(ago(q.updated))}</span>`;
+  const se = $("#stockErr"); if (se) se.remove();
+  if (S.jobs.stock?.err && q.price == null) $("#stockStats").insertAdjacentHTML("beforebegin", `<div class="errbox" id="stockErr">Couldn't get the ANT price yet: ${esc(S.jobs.stock.err)}</div>`);
+  renderUpdateBtn();
+
+  renderStatus(); renderModels(); renderUsage(); renderRadar(); renderNews(); renderFooter(); renderBestTime();
+}
+
+function renderStockChart() {
+  if (!H) return;
+  const el = $("#stockChart"); const ipo = S?.config.ipo_price;
+  const histNote = (have, want, job) => {
+    const err = S?.jobs?.[job]?.err;
+    return have < want ? `<span style="color:var(--warn)">Only ${have} trading day${have === 1 ? "" : "s"} of history so far${err ? "" : ", older days are still downloading"}.</span>${err ? ` <span class="dim">(${esc(err)})</span>` : ""}` : "";
+  };
+  if (stockRange === "all") {
+    // Daily closes; fill any missing days from the intraday prices we have (last regular-hours price).
+    const closes = {}; H.daily.forEach(r => closes[r[0]] = r[4]);
+    const fromIntraday = {};
+    H.stock.forEach(r => { const p = ETparts(r[0]); if (p.min >= 570 && p.min <= 960) fromIntraday[p.day] = r[1]; });
+    Object.entries(fromIntraday).forEach(([d, c]) => { if (closes[d] == null) closes[d] = c; });
+    const daysAll = Object.keys(closes).sort().filter(d => !S.config.ipo_date || d >= S.config.ipo_date);
+    const pts = daysAll.map(d => [Date.parse(d + "T16:00:00-05:00") / 1000, closes[d]]);
+    const idx = pts.map((p, i) => [i, p[1]]);
+    lineChart(el, [{name: "Close", color: "#e07a52", points: idx, fill: true, width: 2.2}], {
+      yFmt: v => "$" + v.toFixed(0), tipFmt: v => fmtUSD(v), refs: ipo ? [{y: ipo, label: "IPO $" + ipo, color: "#a39689"}] : [],
+      xTicks: pts.map((p, i) => [i, ETday.format(new Date(p[0] * 1000))]).filter((_, i, a) => a.length < 12 || i % Math.ceil(a.length / 10) === 0),
+      tipX: (i) => pts[i] ? "Close " + ETday.format(new Date(pts[i][0] * 1000)) : "", empty: "Daily closes appear after the first fetch."});
+    $("#stockLegend").innerHTML = `<span><i style="background:#e07a52"></i>Daily close</span><span><i style="background:#a39689"></i>IPO price</span>` + (H.daily.length < 2 ? `<span>${histNote(pts.length, 2, "daily")}</span>` : "");
+    return;
+  }
+  // 1D = latest trading day, 4D = last 4 trading days.
+  const nDays = stockRange === "1d" ? 1 : 4;
+  const days = [...new Set(H.stock.map(r => ETparts(r[0]).day))].slice(-nDays);
+  let raw = H.stock.filter(r => days.includes(ETparts(r[0]).day));
+  // Compress time: x = trading index so nights and weekends don't flatten the line.
+  const pts = raw.map((r, i) => [i, r[1]]);
+  const bands = [], ticks = []; let runStart = null, lastDay = null;
+  raw.forEach((r, i) => {
+    const p = ETparts(r[0]); const ext = p.min < 570 || p.min >= 960;
+    if (ext && runStart == null) runStart = i; if (!ext && runStart != null) { bands.push([runStart, i]); runStart = null; }
+    if (p.day !== lastDay) { ticks.push([i, ETday.format(new Date(r[0] * 1000))]); lastDay = p.day; }
+  });
+  if (runStart != null) bands.push([runStart, raw.length - 1]);
+  const color = raw.length && raw[raw.length - 1][1] >= raw[0][1] ? "#4fbf86" : "#e0605a";
+  lineChart(el, [{name: S.config.ticker, color, points: pts, fill: true, width: 2, noDots: true}], {
+    height: 250, yFmt: v => "$" + v.toFixed(v > 100 ? 0 : 1), tipFmt: v => fmtUSD(v), bands, xTicks: ticks,
+    refs: ipo ? [{y: ipo, label: "IPO $" + ipo, color: "#a39689"}] : [], tipX: i => raw[i] ? fmtTime(raw[i][0]) : "",
+    empty: "Price history fills in after the first successful fetch."});
+  $("#stockLegend").innerHTML = `<span><i style="background:${color}"></i>${esc(S.config.ticker)} price</span><span><i style="background:#ffffff33;height:8px"></i>Pre-market / after hours</span><span><i style="background:#a39689"></i>IPO price</span><span class="dim">Nights &amp; weekends are skipped</span>` + (days.length < nDays ? `<span>${histNote(days.length, nDays, "backfill")}</span>` : "");
+}
+
+// ---------- status
+const compLvl = s => ({operational: 0, under_maintenance: 1, degraded_performance: 1, partial_outage: 2, major_outage: 3}[s] ?? null);
+function renderStatus() {
+  const st = S.status;
+  if (st?.page_url && safeUrl(st.page_url)) $("#statusLink").href = st.page_url;
+  if (!st) { $("#components").innerHTML = `<div class="empty">${esc(S.jobs.status?.err ? "Couldn't reach the status page: " + S.jobs.status.err : "Loading…")}</div>`; return; }
+  $("#statusAlerts").innerHTML = (st.incidents || []).map(i => `<div class="errbox"><b>${esc(i.name)}</b> · ${esc(i.status)}<div style="margin-top:4px">${esc(i.latest)}</div>
+    <div class="meta" style="margin-top:4px;font-size:11px">Started ${esc(fmtTime(i.created))} · updated ${esc(ago(i.updated))} ${safeUrl(i.url) ? `· <a href="${esc(i.url)}" target="_blank" rel="noopener">details</a>` : ""}</div></div>`).join("");
+  $("#components").innerHTML = st.components.map(c => `<div class="comp"><span class="dot l${compLvl(c.status) ?? ""}"></span>${esc(c.name)}<span class="st">${esc(c.status.replace(/_/g, " "))}</span></div>`).join("");
+  const maint = [...(st.maintenances || []), ...(S.upcoming_maint || [])].filter((m, i, a) => a.findIndex(x => x.name === m.name && x.start === m.start) === i);
+  $("#maint").innerHTML = maint.length ? maint.map(m => `<div class="item"><b>${esc(m.name)}</b><div class="meta">${esc(m.status.replace(/_/g, " "))} · ${esc(fmtTime(m.start))} → ${esc(fmtTime(m.end))}${m.start > S.now ? ` · starts in <span class="cd" data-cd="${m.start}"></span>` : ""}</div>${m.components?.length ? `<div class="meta">${esc(m.components.join(", "))}</div>` : ""}</div>`).join("")
+    : `<div class="dim" style="font-size:13px">No scheduled maintenance.</div>`;
+  const inc = S.recent_incidents || [];
+  $("#incidents").innerHTML = inc.length ? inc.slice(0, 12).map(i => {
+    const dur = i.resolved ? Math.round((i.resolved - i.created) / 60) : null;
+    return `<div class="item"><span class="dot l${({none: 0, minor: 1, major: 2, critical: 3}[i.impact] ?? 1)}"></span> <b>${safeUrl(i.url) ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.name)}</a>` : esc(i.name)}</b>
+      <div class="meta">${esc(fmtTime(i.created))} · ${i.resolved ? "resolved after " + (dur >= 60 ? Math.floor(dur / 60) + "h " + (dur % 60) + "m" : dur + "m") : "<b style='color:var(--down)'>ongoing</b>"} · impact ${esc(i.impact || "—")}${i.components?.length ? " · " + esc(i.components.join(", ")) : ""}</div></div>`;
+  }).join("") : `<div class="dim" style="font-size:13px">No incidents in the last 14 days.</div>`;
+}
+
+function renderTimeline() {
+  if (!H) return;
+  const tl = H.timeline, start = H.end - 4 * 86400, end = H.end, span = end - start;
+  const color = l => ["#1f3328", "var(--warn)", "#ef8a4a", "var(--down)"][l] || "var(--warn)";
+  const rows = (tl.rows || []).slice().sort((a, b) => a.component.localeCompare(b.component));
+  if (!rows.length) { $("#timeline").innerHTML = `<div class="empty">Waiting for status data…</div>`; return; }
+  let ticks = ""; for (let t = Math.ceil(start / 86400) * 86400; t < end; t += 86400) { const d = new Date(t * 1000); d.setHours(0, 0, 0, 0); const tt = d.getTime() / 1000; if (tt < start) continue; ticks += `<span style="left:${(tt - start) / span * 100}%">${esc(d.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric"}))}</span>`; }
+  $("#timeline").innerHTML = rows.map(r => `<div class="tl-row"><div class="nm" title="${esc(r.component)}">${esc(r.component)}</div>
+    <div class="tl-track">${r.intervals.map(iv => `<span title="${esc(iv.label + " · " + fmtTime(iv.start) + " – " + fmtTime(iv.end))}" style="left:${(iv.start - start) / span * 100}%;width:${Math.max(0.25, (iv.end - iv.start) / span * 100)}%;background:${color(iv.level)}"></span>`).join("")}</div>
+    <div class="num ${r.uptime_pct < 99 ? "down" : "muted"}">${r.uptime_pct.toFixed(2)}%</div></div>`).join("")
+    + `<div class="tl-axis"><div></div><div class="ticks">${ticks}</div><div class="num">uptime</div></div>`;
+  $("#tlNote").textContent = tl.sampled_since ? "from incident reports + " + HOST() + "'s checks since " + fmtTime(tl.sampled_since) : "from incident reports";
+}
+
+// ---------- models
+const TYPICAL = {haiku: "Fastest, cheapest", sonnet: "Fast all-rounder", opus: "Slower, most capable everyday model", fable: "Slowest, top tier (Mythos-class)", mythos: "Slowest, top tier"};
+function typical(id) { const k = Object.keys(TYPICAL).find(k => id.includes(k)); return k ? TYPICAL[k] : ""; }
+function speedSource() {
+  // OpenRouter speed first, then your own probes, then OpenRouter uptime only.
+  const sp = S.speed || [], pr = S.probes || [];
+  if (sp.some(r => r.ttft != null)) return {src: "or", rows: sp};
+  if (S.config.has_key && pr.some(r => r.ttft != null)) return {src: "probe", rows: pr};
+  if (sp.length && (sp.some(r => r.at) || !S.config.has_key)) return {src: "or", rows: sp};
+  return {src: "probe", rows: pr};
+}
+function renderModels() {
+  const {src, rows} = speedSource();
+  const hasSpeed = rows.some(r => r.ttft != null);
+  let note = "";
+  if (src === "or") {
+    $("#probeInfo").textContent = "OpenRouter · every 5 min";
+    if (!hasSpeed && rows.some(r => r.at) && !S.config.has_or_key)
+      note += `<div class="warnbox">Uptime is live. For speed numbers, add a <b>free OpenRouter key</b> (no credits needed): sign in at openrouter.ai → <b>Keys</b> → Create, then put it in <code>${esc(CONF_PATH())}</code> as <code>"openrouter_api_key"</code>. It's picked up within a minute.</div>`;
+    if (S.jobs.openrouter?.err) note += `<div class="errbox">OpenRouter: ${esc(S.jobs.openrouter.err)}</div>`;
+    note += `<div class="note" style="margin:0 0 8px">Live from OpenRouter's real traffic to each Claude model: median of the last 30 minutes${rows[0]?.provider ? ", " + esc(rows[0].provider) + " endpoint" : ""}.</div>`;
+  } else {
+    $("#probeInfo").textContent = S.config.has_key ? `your probes · every ${S.config.probe_interval_min} min` : "";
+    if (!S.config.has_key) note = `<div class="warnbox">Waiting for OpenRouter data${S.jobs.openrouter?.err ? " (" + esc(S.jobs.openrouter.err) + ")" : ""}… Load also comes from the status page.</div>`;
+    else if (S.jobs.probes?.err) note = `<div class="errbox">Probe error: ${esc(S.jobs.probes.err)}</div>`;
+  }
+  $("#modelsNote").innerHTML = note;
+  const maxTps = Math.max(1, ...rows.map(p => p.tps || 0));
+  const apiComp = (S.status?.components || []).find(c => /api/i.test(c.name));
+  const lastHead = src === "or" ? "Uptime 30m" : "OK (4d)";
+  $("#modelTable").innerHTML = `<tr><th>Model</th><th>Load</th><th class="num">First token</th><th class="num">Tokens/s</th><th class="num hide-sm">Usual</th><th class="num">${lastHead}</th></tr>` +
+    rows.map((p, i) => {
+      const loadLabel = p.load ? `<span class="dot l${p.load.level}"></span> ${esc(p.load.label)}` : apiComp ? `<span class="dot l${compLvl(apiComp.status) ?? ""}"></span> <span class="muted">${esc(apiComp.status.replace(/_/g, " "))}</span>` : "—";
+      const others = (p.others || []).filter(o => o.up30 != null).map(o => `${esc(o.provider)} ${o.up30.toFixed(1)}%`).join(" · ");
+      const last = src === "or" ? (p.up30 != null ? `<span class="${p.up30 < 99 ? "down" : ""}">${p.up30.toFixed(1)}%</span>` : "—") : (p.success_pct != null ? p.success_pct.toFixed(0) + "%" : "—");
+      return `<tr><td><span style="color:${COLORS[i % COLORS.length]}">●</span> <b>${esc(p.display_name)}</b><div class="dim hide-sm" style="font-size:11px">${esc(p.model)} · ${esc(typical(p.model))}</div>${others ? `<div class="dim hide-sm" style="font-size:11px">Also: ${others}</div>` : ""}${p.error && !p.ok && src === "probe" ? `<div class="down" style="font-size:11px">${esc(p.error)}</div>` : ""}</td>
+      <td>${loadLabel}${p.at ? `<div class="dim" style="font-size:11px">${esc(ago(p.at))}</div>` : ""}</td>
+      <td class="num">${fmtSec(p.ttft)}</td>
+      <td class="num">${p.tps != null ? p.tps.toFixed(0) : "—"}<span class="speedbar"><div style="width:${(p.tps || 0) / maxTps * 100}%"></div></span></td>
+      <td class="num muted hide-sm">${p.med_ttft != null ? fmtSec(p.med_ttft) + " · " + (p.med_tps ? p.med_tps.toFixed(0) + "/s" : "—") : "—"}</td>
+      <td class="num muted">${last}</td></tr>`;
+    }).join("") + (rows.length ? "" : `<tr><td colspan="6" class="empty">Loading model list…</td></tr>`);
+}
+function renderProbeCharts() {
+  if (!H || !S) return;
+  const {src, rows} = speedSource();
+  const start = H.end - 4 * 86400;
+  const ticks = []; for (let t = start; t <= H.end; t += 3600) { const d = new Date(t * 1000); if (d.getHours() === 0) { d.setMinutes(0, 0, 0); ticks.push([d.getTime() / 1000, d.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric"})]); } }
+  // orstats rows: [ts, ttft, tps, up5, up30, up1d]; probe rows: [ts, ok, ttft, tps]
+  const data = m => src === "or" ? (H.orstats?.[m] || []) : (H.probes[m] || []).filter(r => r[1]);
+  const col = src === "or" ? {ttft: 1, tps: 2, up: 4} : {ttft: 2, tps: 3};
+  const mk = idx => rows.map((p, i) => ({name: p.display_name || p.model, color: COLORS[i % COLORS.length], noDots: true, points: data(p.model).map(r => [r[0], r[idx]])}));
+  const hasT = mk(col.ttft).some(s => s.points.some(p => p[1] != null));
+  const empty = src === "or" ? "Builds up as data is collected (every 5 minutes)." : (S.config.has_key ? "Speed history builds up as probes run." : "Waiting for speed data.");
+  const base = {xMin: start, xMax: H.end, xTicks: ticks, gap: 3 * 3600, maxSnap: 3600, empty};
+  if (!hasT && src === "or" && mk(col.up).some(s => s.points.length)) {
+    $("#ttftTitle").textContent = "Uptime (30-min window) · last 4 days"; $("#ttftHint").textContent = "higher is better";
+    lineChart($("#ttftChart"), mk(col.up), {...base, height: 190, yFmt: v => v.toFixed(1) + "%", tipFmt: v => v.toFixed(2) + "%"});
+  } else {
+    $("#ttftTitle").textContent = "Time to first token · last 4 days"; $("#ttftHint").textContent = "lower is faster";
+    lineChart($("#ttftChart"), mk(col.ttft), {...base, height: 190, yZero: true, yFmt: v => v.toFixed(1) + "s", tipFmt: v => fmtSec(v)});
+  }
+  lineChart($("#tpsChart"), mk(col.tps), {...base, height: 170, yZero: true, yFmt: v => v.toFixed(0), tipFmt: v => v.toFixed(0) + " tok/s",
+    empty: src === "or" && !S.config.has_or_key ? "Add a free OpenRouter key to chart speed." : empty});
+  $("#ttftLegend").innerHTML = rows.map((p, i) => `<span><i style="background:${COLORS[i % COLORS.length]}"></i>${esc(p.display_name)}</span>`).join("");
+  // Busiest hours
+  const hrs = H.hourly || []; const vals = hrs.map(h => h.avg_ttft).filter(v => v != null);
+  if (vals.length < 6) {
+    $("#hours").innerHTML = `<div class="note">Not enough probe data yet. Typically the busiest stretch is US weekday working hours (about 9 a.m.–5 p.m. ET); evenings and weekends are usually quickest.</div>`;
+  } else {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    $("#hours").innerHTML = `<div class="hours">${hrs.map(h => { const t = h.avg_ttft == null ? null : (h.avg_ttft - lo) / ((hi - lo) || 1);
+      const bg = t == null ? "var(--panel2)" : `hsl(${140 - t * 140},55%,${32 + t * 10}%)`;
+      return `<div style="background:${bg}" title="${h.hour}:00 ET · ${h.avg_ttft == null ? "no data" : fmtSec(h.avg_ttft) + " avg · " + h.n + " probes"}"></div>`; }).join("")}</div>
+      <div class="hours-lbl">${hrs.map(h => `<span>${h.hour % 3 === 0 ? (h.hour % 12 || 12) + (h.hour < 12 ? "a" : "p") : ""}</span>`).join("")}</div>
+      <div class="legend"><span><i style="background:hsl(140,55%,32%);height:8px"></i>quick</span><span><i style="background:hsl(0,55%,42%);height:8px"></i>slow</span></div>`;
+  }
+}
+
+// ---------- usage
+function usageBar(label, pct, reset, note) {
+  return `<div class="usage-row"><div class="top"><b>${esc(label)}</b><span>${pct == null ? "—" : Math.round(pct) + "% used"}</span></div>
+    <div class="bar"><div class="${pct >= 80 ? "hot" : ""}" style="width:${Math.min(100, pct || 0)}%"></div></div>
+    <div class="top muted" style="font-size:12px"><span>${note ? esc(note) : reset ? "Resets " + esc(fmtTime(reset)) : "Reset time not set"}</span>${reset ? `<span class="cd" data-cd="${reset}"></span>` : ""}</div></div>`;
+}
+function renderUsage() {
+  const u = S.usage || {}, pu = S.plan_usage || {};
+  const live = pu.status === "ok" || ((pu.status === "expired" || pu.status === "error") && pu.meters?.length);
+  let h = "";
+  if (pu.status === "expired")
+    h += `<div class="warnbox">Claude Code's sign-in on ${HOST()} has expired, so usage can't be read right now${pu.last_ok ? " (last reading " + esc(ago(pu.last_ok)) + ")" : ""}. Open ${TERMINAL()} on ${HOST()} and run <code>claude</code> once. It refreshes the sign-in, and this updates within 5 minutes.</div>`;
+  else if (pu.status === "error")
+    h += `<div class="errbox">Couldn't read usage from Anthropic (${esc(S.jobs.plan_usage?.err || "HTTP " + pu.code)}). Showing the last reading.</div>`;
+  if (live) {
+    const plan = pu.plan ? pu.plan.charAt(0).toUpperCase() + pu.plan.slice(1) + " plan · " : "";
+    h += `<div class="muted" style="font-size:12px;margin-bottom:8px">${esc(plan)}live from your Claude Code sign-in · ${esc(ago(pu.last_ok || pu.at))}</div>`;
+    h += pu.meters.map(m => usageBar(m.label, m.pct, m.resets && m.resets > S.now ? m.resets : null, m.resets && m.resets <= S.now ? "Reset — refreshing…" : null)).join("");
+    $("#btnUsage").style.display = "none"; $("#usageForm").classList.remove("open");
+  } else {
+    $("#btnUsage").style.display = "";
+    if (pu.status === "no_claude_code")
+      h += `<div class="note" style="margin-top:0">To fill this in automatically, install Claude Code on ${HOST()} and sign in once with your Claude account. In ${TERMINAL()}:<br><code>${esc(CC_INSTALL())}</code> then run <code>claude</code>. This checks for it every 5 minutes. Until then you can type the numbers in with <b>Update</b>.</div>`;
+    if (!u.updated) {
+      if (pu.status !== "no_claude_code") h += `<div class="note" style="margin-top:0">Copy your usage from <b>Settings → Usage</b> in Claude and press <b>Update</b>. The countdowns then run here.</div>`;
+    } else {
+      h += `<div class="muted" style="font-size:12px;margin:8px 0">${esc(u.plan || "")} plan · typed in ${esc(ago(u.updated))}</div>`;
+      h += usageBar("Current session (5-hour window)", u.session_pct, u.session_reset, u.session_note);
+      h += usageBar("Weekly — all models", u.weekly_pct, u.weekly_reset, u.weekly_note);
+      if (u.weekly_model_pct != null) h += usageBar("Weekly — model-specific limit", u.weekly_model_pct, u.weekly_reset, null);
+    }
+  }
+  $("#usageView").innerHTML = h;
+  // API rate limits: only relevant with an Anthropic API key.
+  $("#rlWrap").style.display = S.config.has_key ? "" : "none";
+  const rl = S.rate_limits;
+  if (!S.config.has_key) return;
+  if (!rl) { $("#rateLimits").innerHTML = `<div class="dim" style="font-size:13px">Shows after the first probe.</div>`; $("#rlAt").textContent = ""; return; }
+  $("#rlAt").textContent = "from probe " + ago(rl.at);
+  const L = rl.limits; const groups = [["requests", "Requests / min"], ["input-tokens", "Input tokens / min"], ["output-tokens", "Output tokens / min"], ["tokens", "Tokens / min"]];
+  $("#rateLimits").innerHTML = groups.filter(([g]) => L[g + "-limit"]).map(([g, label]) => {
+    const lim = +L[g + "-limit"], rem = +L[g + "-remaining"], used = lim ? (1 - rem / lim) * 100 : 0;
+    return `<div class="usage-row"><div class="top"><b>${esc(label)}</b><span>${esc(rem.toLocaleString())} / ${esc(lim.toLocaleString())} left</span></div><div class="bar"><div style="width:${used}%"></div></div></div>`;
+  }).join("") || `<div class="dim">No rate-limit headers returned.</div>`;
+}
+function renderUsageChart() {
+  if (!H || !S) return;
+  const uh = H.usage_hist || {}; const keys = Object.keys(uh);
+  const names = Object.fromEntries((S.plan_usage?.meters || []).map(m => [m.key, m.label]));
+  $("#usageChartWrap").style.display = keys.length ? "" : "none";
+  if (!keys.length) return;
+  const start = H.end - 4 * 86400;
+  const ticks = []; for (let t = start; t <= H.end; t += 3600) { const d = new Date(t * 1000); if (d.getHours() === 0) { d.setMinutes(0, 0, 0); ticks.push([d.getTime() / 1000, d.toLocaleDateString(undefined, {weekday: "short", month: "numeric", day: "numeric"})]); } }
+  const order = k => k === "five_hour" ? 0 : k === "seven_day" ? 1 : 2;
+  keys.sort((a, b) => order(a) - order(b));
+  const cols = ["#e07a52", "#6aa7e8", "#b48ef0", "#4cc3bd", "#e6b84f"];
+  const series = keys.map((k, i) => ({name: names[k] || k, color: cols[i % cols.length], noDots: true, points: uh[k]}));
+  lineChart($("#usageChart"), series, {height: 160, xMin: start, xMax: H.end, xTicks: ticks, yZero: true, yFmt: v => v.toFixed(0) + "%", tipFmt: v => v.toFixed(0) + "%", gap: 3600, maxSnap: 3600});
+  $("#usageLegend").innerHTML = series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("");
+}
+function openUsageForm() {
+  const f = $("#usageForm"), u = S.usage || {};
+  f.plan.value = u.plan || "Pro"; f.session_pct.value = u.session_pct ?? ""; f.weekly_pct.value = u.weekly_pct ?? ""; f.weekly_model_pct.value = u.weekly_model_pct ?? "";
+  if (u.session_reset && u.session_reset > S.now) { const m = Math.round((u.session_reset - Date.now() / 1000) / 60); f.session_in.value = Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0"); } else f.session_in.value = "";
+  if (u.weekly_reset) { const d = new Date(u.weekly_reset * 1000); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); f.weekly_reset.value = d.toISOString().slice(0, 16); } else f.weekly_reset.value = "";
+  f.classList.add("open");
+}
+async function saveUsage(ev) {
+  ev.preventDefault(); const f = ev.target;
+  let session_reset = null; const m = (f.session_in.value || "").trim().match(/^(\d+)(?::(\d{1,2}))?$/);
+  if (m) session_reset = Math.round(Date.now() / 1000 + (+m[1]) * 3600 + (+(m[2] || 0)) * 60);
+  const weekly_reset = f.weekly_reset.value ? Math.round(new Date(f.weekly_reset.value).getTime() / 1000) : null;
+  await getJSON("/api/usage", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
+    plan: f.plan.value, session_pct: f.session_pct.value, session_reset, weekly_pct: f.weekly_pct.value, weekly_reset, weekly_model_pct: f.weekly_model_pct.value})});
+  f.classList.remove("open"); loadState();
+}
+
+// ---------- radar + news
+function newsItem(n) { const u = safeUrl(n.url);
+  return `<div class="item">${(n.tags || []).map(t => `<span class="tag ${esc(t)}">${esc(t)}</span>`).join("")}${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n.title)}</a>` : esc(n.title)}<div class="meta">${esc(n.source)} · ${esc(ago(n.ts))}</div></div>`; }
+function renderRadar() {
+  const am = S.available_models || [];
+  const fresh = am.filter(m => m.new);
+  let h = "";
+  if (!am.length) h = `<div class="dim">Checking model list…</div>`;
+  else {
+    h = fresh.length ? fresh.map(m => `<div class="item"><span class="tag new">new</span><b>${esc(m.display_name)}</b><div class="meta">${esc(m.id)} · spotted ${esc(ago(m.first_seen))}</div></div>`).join("")
+      : `<div class="muted" style="font-size:13px">No new models since ${HOST()} started watching (checks ${esc(S.models_source || "")} hourly). Newest available:</div>`;
+    h += `<table style="margin-top:6px">${am.slice(0, 6).map(m => `<tr><td>${esc(m.display_name)}<div class="dim" style="font-size:11px">${esc(m.id)}</div></td><td class="num muted">${m.created ? esc(new Date(m.created * 1000).toLocaleDateString()) : ""}</td></tr>`).join("")}</table>`;
+  }
+  $("#newModels").innerHTML = h;
+  const rel = (S.news || []).filter(n => (n.tags || []).includes("release")).slice(0, 6);
+  $("#releaseNews").innerHTML = rel.length ? rel.map(newsItem).join("") : `<div class="dim" style="font-size:13px">No release headlines this week. Anthropic doesn't pre-announce launch dates; new models usually show up here and in the model list on launch day.</div>`;
+}
+function renderNews() {
+  const list = (S.news || []).filter(n => newsFilter === "all" || (n.tags || []).includes(newsFilter)).slice(0, 18);
+  $("#news").innerHTML = list.length ? list.map(newsItem).join("") : `<div class="empty">${esc(S.jobs.news?.err ? "News unavailable: " + S.jobs.news.err : "No headlines yet.")}</div>`;
+}
+function renderFooter() {
+  const bad = Object.entries(S.jobs || {}).filter(([, j]) => j.err);
+  $("#footer").innerHTML = `Claude Pulse ${esc(S.version)} · runs on ${HOST()} · Data: Yahoo Finance / Stooq (quotes may be delayed), status.claude.com, OpenRouter, Anthropic API (optional), Google News. Not investment advice.`
+    + (bad.length ? `<div style="margin-top:6px;color:#c98a7f">Problems: ${bad.map(([k, j]) => esc(k) + " (" + esc(j.err) + ")").join(" · ")}</div>` : "");
+}
+
+function renderHistory() { renderStockChart(); renderTimeline(); renderProbeCharts(); renderUsageChart(); renderBestTime(); }
+function tick() { document.querySelectorAll("[data-cd]").forEach(el => el.textContent = countdown(+el.dataset.cd)); }
+
+
+
+// ---------- best time to use Claude
+const DOWS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function tzParts(ts, tz) { const p = {}; new Intl.DateTimeFormat("en-US", {timeZone: tz, hour12: false, weekday: "short", hour: "2-digit", minute: "2-digit"}).formatToParts(new Date(ts * 1000)).forEach(x => p[x.type] = x.value); return {dow: DOWS.indexOf(p.weekday), hour: (+p.hour) % 24, min: +p.minute}; }
+function isPeak(ts) { const ph = S?.config?.peak_hours; if (!ph) return false; const p = tzParts(ts, ph.tz); return ph.days.includes(p.dow) && p.hour >= ph.start_hour && p.hour < ph.end_hour; }
+function nextChange(ts) { const cur = isPeak(ts); for (let t = Math.ceil((ts + 1) / 900) * 900; t < ts + 8 * 86400; t += 900) if (isPeak(t) !== cur) return t; return null; }
+const ETh = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit"});
+function etWhen(ts) { const today = ETday.format(new Date(S.now * 1000)), d = ETday.format(new Date(ts * 1000));
+  const tmw = ETday.format(new Date((S.now + 86400) * 1000)); const time = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", hour: "numeric", minute: "2-digit"}).format(new Date(ts * 1000));
+  return (d === today ? "Today " : d === tmw ? "Tomorrow " : ETh.format(new Date(ts * 1000)).split(" ")[0] + " ") + time; }
+function loadColor(r) { const t = Math.max(0, Math.min(1, (r - 0.85) / 0.5)); return `hsl(${140 - t * 140},50%,${30 + t * 8}%)`; }
+function renderBestTime() {
+  if (!S) return;
+  const ph = S.config.peak_hours, now = Math.floor(Date.now() / 1000);
+  const peak = isPeak(now), nc = nextChange(now);
+  $("#btNow").innerHTML = `<div class="bt-now"><span class="dot ${peak ? "l2" : "l0"}" style="width:12px;height:12px"></span>
+    <div style="flex:1;min-width:0"><div class="big2">${peak ? "Peak hours now" : "Off-peak now: good time to use Claude"}</div>
+    <div class="muted" style="font-size:12px">${peak ? "Your 5-hour session drains faster right now." : "Your 5-hour session stretches further now."}${nc ? ` ${peak ? "Off-peak" : "Peak"} starts ${esc(etWhen(nc))} · in <span class="cd" data-cd="${nc}"></span>` : ""}</div></div></div>`;
+  // Week grid (Eastern time).
+  const lg = H?.load_grid || {cells: []}; const cell = {}; lg.cells.forEach(c => { if (c.n >= 2) cell[c.dow + "-" + c.hour] = c; });
+  // Fallback for hours we haven't seen on that weekday yet: same hour, other weekdays (or weekend days).
+  const byHour = {}; lg.cells.forEach(c => { if (c.n < 2) return; const k = (c.dow >= 5 ? "we" : "wd") + c.hour; (byHour[k] = byHour[k] || []).push(c.ratio); });
+  const estimate = (dow, hour) => cell[dow + "-" + hour]?.ratio ?? (v => v ? v.reduce((a, x) => a + x, 0) / v.length : null)(byHour[(dow >= 5 ? "we" : "wd") + hour]);
+  const np = tzParts(now, "America/New_York");
+  const refTs = (dow, hour) => { const off = ((dow - np.dow) + 7) % 7; return now - np.min * 60 - (now % 60) + off * 86400 + (hour - np.hour) * 3600; };
+  let g = `<div class="bt-grid"><div></div>${Array.from({length: 24}, (_, h) => `<div class="lbl">${h % 3 === 0 ? (h % 12 || 12) + (h < 12 ? "a" : "p") : ""}</div>`).join("")}`;
+  for (let d = 0; d < 7; d++) {
+    g += `<div>${DOWS[d]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const pk = isPeak(refTs(d, h) + 1800), c = cell[d + "-" + h];
+      const bg = c ? loadColor(c.ratio) : (pk ? "#4a3022" : "#1f3328");
+      const tip = `${DOWS[d]} ${h % 12 || 12}${h < 12 ? " AM" : " PM"} ET · ${pk ? "peak hours (session drains faster)" : "off-peak"}${c ? ` · speed ${c.ratio < 0.95 ? "faster than usual" : c.ratio < 1.15 ? "normal" : "slower than usual"} (${c.ratio.toFixed(2)}× typical wait, ${c.n} samples)` : ""}`;
+      g += `<div class="c ${pk ? "peak" : ""} ${d === np.dow && h === np.hour ? "now" : ""}" style="background:${bg}" title="${esc(tip)}"></div>`;
+    }
+  }
+  g += `</div><div class="legend"><span><i style="background:#1f3328;height:8px"></i>off-peak</span><span><i style="background:#4a3022;height:8px;box-shadow:inset 0 0 0 1.5px #e07a52"></i>peak hours</span>${lg.cells.length ? `<span><i style="background:hsl(140,50%,30%);height:8px"></i>quick</span><span><i style="background:hsl(0,50%,38%);height:8px"></i>slow (measured)</span>` : ""}<span><i style="background:transparent;outline:2px solid #fff;height:8px"></i>now</span></div>`;
+  $("#btGrid").innerHTML = g;
+  $("#btNote").textContent = lg.cells.length ? `Eastern time · speed from ${lg.days_of_data} days of data` : "Eastern time";
+  // Best windows in the next 48 hours: 3-hour off-peak blocks, quickest first when we have speed data.
+  const blocks = [];
+  const start = Math.ceil(now / 3600) * 3600;
+  for (let t = start; t < start + 48 * 3600; t += 3600) {
+    if (isPeak(t + 1800)) continue;
+    const p = tzParts(t, "America/New_York"); const r = estimate(p.dow, p.hour);
+    const last = blocks[blocks.length - 1];
+    if (last && last.end === t && last.hours < 3) { last.end = t + 3600; last.hours++; if (r != null) last.r.push(r); }
+    else blocks.push({start: t, end: t + 3600, hours: 1, r: r != null ? [r] : []});
+  }
+  const scored = blocks.filter(b => b.hours >= 2).map(b => ({...b, avg: b.r.length ? b.r.reduce((a, x) => a + x, 0) / b.r.length : null}));
+  const haveSpeed = scored.some(b => b.avg != null);
+  const pick = (haveSpeed ? scored.filter(b => b.avg != null).sort((a, b) => a.avg - b.avg) : scored).slice(0, 3).sort((a, b) => a.start - b.start);
+  const nightNote = b => { const h = tzParts(b.start, "America/New_York").hour; return h >= 0 && h < 6 ? " (late night)" : ""; };
+  $("#btBest").innerHTML = `<div class="muted" style="font-size:12px;margin-top:10px">${haveSpeed ? "Quickest off-peak windows in the next 48 hours:" : "Next off-peak windows (speed data still building):"}</div>
+    <div class="bt-best">${pick.map(b => `<div class="item"><b>${esc(etWhen(b.start))} – ${esc(new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", hour: "numeric", minute: "2-digit"}).format(new Date(b.end * 1000)))}${nightNote(b)}</b><span class="muted" style="font-size:12px">${b.avg != null ? (b.avg < 0.95 ? "faster than usual" : b.avg < 1.15 ? "normal speed" : "a bit slower") : "off-peak"}</span></div>`).join("") || `<div class="dim">—</div>`}</div>
+    <div class="note">Peak hours are Anthropic's announced window (${ph ? `weekdays ${ph.start_hour}–${ph.end_hour} ${ph.tz.includes("Los_Angeles") ? "PT, 8 AM–2 PM ET" : ph.tz}` : "not set"}): your 5-hour session drains faster then, off-peak it lasts longer. Weekly limits are the same at any hour.</div>`;
+}
+
+// ---------- self-update
+let updating = false;
+function renderUpdateBtn() {
+  if (updating) return;
+  const b = $("#btnUpdate"), u = S.update;
+  b.classList.toggle("avail", !!u?.available);
+  b.textContent = u?.available ? `⬆ Update to v${u.latest}` : "⬆ Update";
+  b.title = u ? (u.available ? `Version ${u.latest} is on GitHub (you have ${S.version})` : `Up to date (v${S.version}) · checked ${ago(u.checked)}`) : `v${S.version} · click to check for updates`;
+}
+async function waitForRestart(oldVersion, target) {
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    try { const h = await getJSON("/api/health"); if (h.version !== oldVersion || (target && h.version === target)) { location.reload(); return; } } catch (e) {}
+  }
+  location.reload();
+}
+$("#btnUpdate").onclick = async () => {
+  const b = $("#btnUpdate"); if (updating) return;
+  b.disabled = true; b.textContent = "Checking…";
+  try {
+    const c = await getJSON("/api/update/check", {method: "POST", body: "{}"});
+    S.update = c.update;
+    if (!c.update?.available) { b.textContent = `✓ Up to date (v${c.version})`; setTimeout(() => { b.disabled = false; renderUpdateBtn(); }, 4000); return; }
+    updating = true; b.textContent = `Installing v${c.update.latest}…`;
+    const r = await fetch("/api/update", {method: "POST", body: "{}"}); const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    b.textContent = "Restarting…";
+    await waitForRestart(c.version, j.to);
+  } catch (e) {
+    updating = false; b.disabled = false; b.textContent = "Update failed"; b.title = String(e.message || e);
+    setTimeout(renderUpdateBtn, 6000);
+  }
+};
+
+// ---------- wiring
+$("#rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  stockRange = b.dataset.r; document.querySelectorAll("#rangeSeg button").forEach(x => x.classList.toggle("on", x === b)); loadHistory(); });
+$("#newsFilters").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  newsFilter = b.dataset.f; document.querySelectorAll("#newsFilters button").forEach(x => x.classList.toggle("on", x === b)); renderNews(); });
+$("#btnUsage").onclick = openUsageForm; $("#usageCancel").onclick = () => $("#usageForm").classList.remove("open");
+$("#usageForm").addEventListener("submit", saveUsage);
+$("#btnRefresh").onclick = async () => { const b = $("#btnRefresh"); b.disabled = true; b.textContent = "Refreshing…";
+  try { await getJSON("/api/refresh", {method: "POST", body: "{}"}); } catch (e) {}
+  setTimeout(async () => { await loadState(); await loadHistory(); b.disabled = false; b.textContent = "↻ Refresh"; }, 6000); };
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(renderHistory, 200); });
+
+(async () => { await loadState(); await loadHistory(); })();
+setInterval(loadState, 15000);
+setInterval(loadHistory, 60000);
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

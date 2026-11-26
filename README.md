@@ -1,5 +1,23 @@
 # Claude Pulse
 
+## ⚡ Install or update
+
+**Windows 10/11** — open PowerShell (not as administrator) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/hardwaremack-prog/claude-pulse/main/windows/get.ps1 | iex
+```
+
+**Raspberry Pi / Linux** — open a terminal and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hardwaremack-prog/claude-pulse/main/get.sh | bash
+```
+
+Run the same line again any time to update. Your settings, keys and history are kept. No terminal? [Download the ZIP](https://github.com/hardwaremack-prog/claude-pulse/archive/refs/heads/main.zip), unzip it, and double-click `windows\install.cmd` (Windows) or run `./install.sh` (Pi).
+
+---
+
 A local dashboard for Anthropic and Claude that runs on a Raspberry Pi 5, any Linux machine, or a **Windows 10/11 PC** (Python 3.9+). It uses only the Python standard library, so there's nothing to `pip install` (on Windows the installer adds the small `tzdata` package, since Windows has no built-in time-zone database).
 
 ![Claude Pulse dashboard](docs/preview.png)

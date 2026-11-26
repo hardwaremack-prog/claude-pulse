@@ -59,8 +59,8 @@ try:
     ET_TZ = ZoneInfo("America/New_York")
 except ZoneInfoNotFoundError:
     sys.exit("Claude Pulse needs time-zone data. Run:  python -m pip install tzdata")
-VERSION = "1.5.1"
-REPO = "CharlesPhillips3/claude-pulse"
+VERSION = "1.5.2"
+REPO = "hardwaremack-prog/claude-pulse"
 REPO_BRANCH = "main"
 
 DEFAULT_CONFIG = {

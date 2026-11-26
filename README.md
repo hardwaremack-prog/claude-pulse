@@ -22,7 +22,7 @@ A local dashboard for Anthropic and Claude that runs on a Raspberry Pi 5, any Li
 Open a terminal on the Pi and paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CharlesPhillips3/claude-pulse/main/get.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hardwaremack-prog/claude-pulse/main/get.sh | bash
 ```
 
 To **update**, press the **⬆ Update** button at the top of the dashboard. It turns orange when a new version is on GitHub, installs it, restarts the app and reloads the page. Running the same line again works too. Either way, your settings and history are kept.
@@ -30,7 +30,7 @@ To **update**, press the **⬆ Update** button at the top of the dashboard. It t
 Or install from a clone:
 
 ```bash
-git clone https://github.com/CharlesPhillips3/claude-pulse.git && cd claude-pulse && ./install.sh
+git clone https://github.com/hardwaremack-prog/claude-pulse.git && cd claude-pulse && ./install.sh
 ```
 
 The installer:
@@ -47,7 +47,7 @@ Then double-click the desktop icon, or browse to `http://localhost:8787`. Other 
 Open **PowerShell** (Start menu → type "PowerShell") and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/CharlesPhillips3/claude-pulse/main/windows/get.ps1 | iex
+irm https://raw.githubusercontent.com/hardwaremack-prog/claude-pulse/main/windows/get.ps1 | iex
 ```
 
 The installer:

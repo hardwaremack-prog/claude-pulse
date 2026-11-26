@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # One-line installer / updater for Claude Pulse:
-#   curl -fsSL https://raw.githubusercontent.com/CharlesPhillips3/claude-pulse/main/get.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/hardwaremack-prog/claude-pulse/main/get.sh | bash
 # Run it again any time to update. Your config and history are kept.
 set -euo pipefail
-REPO="CharlesPhillips3/claude-pulse"
+REPO="hardwaremack-prog/claude-pulse"
 BRANCH="${CLAUDE_PULSE_BRANCH:-main}"
 
 command -v curl >/dev/null || { sudo apt-get update && sudo apt-get install -y curl; }

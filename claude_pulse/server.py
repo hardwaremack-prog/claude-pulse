@@ -98,6 +98,12 @@ HOLIDAYS = {
 EARLY_CLOSE = {"2026-11-27", "2026-12-24", "2027-11-26"}
 
 UA = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36 ClaudePulse/" + VERSION
+# Quote sites (Yahoo, Nasdaq, Stooq) answer 429/403 to anything that looks like a bot,
+# so stock requests send a plain desktop-Chrome identity with no app suffix.
+if sys.platform.startswith("win"):
+    BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+else:
+    BROWSER_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
 
 # --------------------------------------------------------------------------- config
@@ -307,8 +313,9 @@ YCRUMB = {"crumb": None, "at": 0}
 def _yopen(url, timeout=20):
     if CFG.get("offline"):
         raise RuntimeError("offline mode")
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json,text/plain,*/*",
-                                               "Accept-Language": "en-US,en;q=0.9"})
+    req = urllib.request.Request(url, headers={"User-Agent": BROWSER_UA, "Accept": "application/json,text/plain,*/*",
+                                               "Accept-Language": "en-US,en;q=0.9",
+                                               "Referer": "https://finance.yahoo.com/"})
     with YOPENER.open(req, timeout=timeout) as r:
         return r.read()
 
@@ -382,7 +389,7 @@ def _num(s):
 
 def nasdaq_get(path):
     _, _, b = fetch("https://api.nasdaq.com/api" + path, headers={
-        "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": BROWSER_UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
         "Origin": "https://www.nasdaq.com", "Referer": "https://www.nasdaq.com/"})
     j = json.loads(b)
     if not j.get("data"):
@@ -426,7 +433,7 @@ def nasdaq_intraday(symbol):
 
 
 def stooq_quote(symbol):
-    _, _, b = fetch(f"https://stooq.com/q/l/?s={symbol.lower()}.us&f=sd2t2ohlcv&h&e=csv")
+    _, _, b = fetch(f"https://stooq.com/q/l/?s={symbol.lower()}.us&f=sd2t2ohlcv&h&e=csv", headers={"User-Agent": BROWSER_UA})
     lines = b.decode("utf-8", "replace").strip().splitlines()
     d = dict(zip(lines[0].split(","), lines[1].split(",")))
     if _num(d.get("Close")) is None:
